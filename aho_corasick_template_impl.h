@@ -39,132 +39,6 @@
       pthread_exit(0) ;\
 } } while (0)
 
-static char *
-__str_copy__ (const char *v)
-{
-  if (!v)
-    return 0;
-
-  return strdup (v);
-}
-
-static void
-__str_free__ (const char *v)
-{
-  if (!v)
-    return;
-
-  free ((char *) v);
-}
-
-static int
-__eqchar (const char a, const char b)
-{
-  return a == b;
-}
-
-static int
-__equchar (const unsigned char a, const unsigned char b)
-{
-  return a == b;
-}
-
-static int
-__eqshort (const short a, const short b)
-{
-  return a == b;
-}
-
-static int
-__equshort (const unsigned short a, const unsigned short b)
-{
-  return a == b;
-}
-
-static int
-__eqint (const int a, const int b)
-{
-  return a == b;
-}
-
-static int
-__equint (const unsigned int a, const unsigned int b)
-{
-  return a == b;
-}
-
-static int
-__eqlong (const long a, const long b)
-{
-  return a == b;
-}
-
-static int
-__equlong (const unsigned long a, const unsigned long b)
-{
-  return a == b;
-}
-
-static int
-__eqllong (const long long a, const long long b)
-{
-  return a == b;
-}
-
-static int
-__equllong (const unsigned long long a, const unsigned long long b)
-{
-  return a == b;
-}
-
-static int
-__eqfloat (const float a, const float b)
-{
-  return a == b;
-}
-
-static int
-__eqdouble (const double a, const double b)
-{
-  return a == b;
-}
-
-static int
-__eqldouble (const long double a, const long double b)
-{
-  return a == b;
-}
-
-static int
-__eqstring (const char * const a, const char * const b)
-{
-  return strcoll (a, b) == 0;
-}
-
-#  define EQ_DEFAULT(ACM_SYMBOL) _Generic(*(ACM_SYMBOL *)0,            \
-  char:               __eqchar,                                        \
-  unsigned char:      __equchar,                                       \
-  short:              __eqshort,                                       \
-  unsigned short:     __equshort,                                      \
-  int:                __eqint,                                         \
-  unsigned int:       __equint,                                        \
-  long:               __eqlong,                                        \
-  unsigned long:      __equlong,                                       \
-  long long:          __eqllong,                                       \
-  unsigned long long: __equllong,                                      \
-  float:              __eqfloat,                                       \
-  double:             __eqdouble,                                      \
-  long double:        __eqldouble,                                     \
-  char*:              __eqstring,                                      \
-  default:            EQ_##ACM_SYMBOL##_DEFAULT                        \
-  )
-
-#  define COPY_DEFAULT(ACM_SYMBOL)                                     \
-  _Generic(*(ACM_SYMBOL*)0, char*:__str_copy__, default:(COPY_##ACM_SYMBOL##_TYPE)0)
-
-#  define DESTROY_DEFAULT(ACM_SYMBOL)                                  \
-  _Generic(*(ACM_SYMBOL*)0, char*:__str_free__, default:(DESTROY_##ACM_SYMBOL##_TYPE)0)
-
 // BEGIN DEFINE_ACM
 #  define ACM_DEFINE(ACM_SYMBOL)                                       \
 \
@@ -177,16 +51,13 @@ __DTOR_##ACM_SYMBOL(const ACM_SYMBOL letter)                           \
 {                                                                      \
   if(DESTROY_##ACM_SYMBOL)                                             \
     DESTROY_##ACM_SYMBOL( letter );                                    \
-  else if(DESTROY_DEFAULT(ACM_SYMBOL))                                 \
-    DESTROY_DEFAULT(ACM_SYMBOL)( letter );                             \
 }                                                                      \
 \
 static ACM_SYMBOL                                                      \
 __COPY_##ACM_SYMBOL(const ACM_SYMBOL letter)                           \
 {                                                                      \
   return COPY_##ACM_SYMBOL ?                                           \
-           COPY_##ACM_SYMBOL(letter) : COPY_DEFAULT(ACM_SYMBOL) ?      \
-                                         COPY_DEFAULT(ACM_SYMBOL)(letter) : letter;   \
+           COPY_##ACM_SYMBOL(letter) : letter;   \
 }                                                                      \
 \
 static int EQ_##ACM_SYMBOL##_DEFAULT (const ACM_SYMBOL a, const ACM_SYMBOL b)      \
@@ -206,13 +77,7 @@ static int __EQ_##ACM_SYMBOL(const ACM_SYMBOL a, const ACM_SYMBOL b)   \
 {                                                                      \
   return   EQ_##ACM_SYMBOL ?                                           \
              EQ_##ACM_SYMBOL (a,   b) :                                \
-             (size_t)0 != (size_t)(EQ_DEFAULT (ACM_SYMBOL)) ?          \
-               EQ_DEFAULT (ACM_SYMBOL)(a,   b) :                       \
-               (fprintf (stderr, "%s", "ERROR: " "Missing equality operator for type '" #ACM_SYMBOL "'.\n"  \
-                                       "       " "Use SET_EQ_OPERATOR(" #ACM_SYMBOL ", operator),\n"        \
-                                       "       " "where operator is a function defined as:\n"               \
-                                       "       " "int operator(" #ACM_SYMBOL " a, " #ACM_SYMBOL " b) { return a == b ; }.\n"   \
-                                       "ABORT  " "\n"), fflush (0), raise (SIGABRT));                       \
+               EQ_##ACM_SYMBOL##_DEFAULT (a,   b);                       \
 }                                                                      \
 \
 static const ACState_##ACM_SYMBOL *state_goto_##ACM_SYMBOL (           \
